@@ -17,6 +17,9 @@ df_clean['date'] = pd.to_datetime(df_clean['date'])
 df_auv = df_clean[df_clean['region (name)'] == "Auvergne-Rhône-Alpes"]
 df_auv = df_auv[(df_auv['date'].dt.year == 2020) | (df_auv['date'].dt.year == 2019) | (df_auv['date'].dt.year == 2018) ]
 
+# def region names :
+region_names = df_clean['region (name)'].unique().tolist()
+
 """
 Idées dashboard :
 - évolution température vs temps pour une région donnée
@@ -29,16 +32,19 @@ def generate_graph():
     """This function takes a DataFrame and return a pie inside a component.
     """
     dataframe = df_auv
-    fig = px.scatter(df_auv, x = 'date', y = 'Température (°C)', title = 'Temperature in Auvergne-Rhône-Alpes last tree years :')
+    fig = px.scatter(dataframe, x = 'date', y = 'Température (°C)', title = 'Temperature in Auvergne-Rhône-Alpes last tree years :')
     return dcc.Graph(
         id="Auvergne-temp-graph",
         figure=fig,
     )
 
+
+
 app = dash.Dash(__name__)
 
 # Here our layout i.e. how our page is going to look.
 app.layout = html.Div(children=[
+
     # Display H1 title.
     html.H1(children="Energy dashboard"),
 
@@ -46,11 +52,33 @@ app.layout = html.Div(children=[
     html.Div(children=html.P(children="""
         This product performs useful visualizations for electric energy consumption in France regions.
     """)),
-    
+
     html.Div(
-        children=generate_graph()
-        )
-])
+
+        children=[
+                    html.P(children="Select your Region:"),
+
+                    dcc.Dropdown(
+                        id="select-region-name",
+                        options=[{"label": name, "value": name}
+                                 for name in region_names],
+                    ),
+                    html.Div(children = dcc.Graph(id = 'graph_temp'))
+                ]
+            )
+
+    ])
+
+@app.callback(
+    dash.dependencies.Output("graph_temp", "figure"),
+    dash.dependencies.Input("select-region-name", "value"))
+def generate_graph_2(region = "Ile-de-France"):
+    """This function takes a DataFrame and return a pie inside a component.
+    """
+    dataframe = df_clean[df_clean['region (name)'] == region]
+    dataframe = dataframe[(dataframe['date'].dt.year == 2020) | (dataframe['date'].dt.year == 2019) | (dataframe['date'].dt.year == 2018) ]
+    fig = px.scatter(dataframe, x = 'date', y = 'Température (°C)', title = 'Temperature in ' + region + ' last tree years :')
+    return fig
 
 
 
